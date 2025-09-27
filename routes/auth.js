@@ -5,12 +5,10 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Register
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({ username, email, password: hashedPassword });
@@ -22,20 +20,16 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: 'User not found' });
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
-    // Generate token
     const token = jwt.sign({ id: user._id }, 'secretKey', { expiresIn: '1h' });
 
     res.json({ token });
@@ -44,7 +38,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Middleware to verify token
 function authMiddleware(req, res, next) {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Access denied' });
@@ -58,7 +51,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// Protected route
 router.get('/profile', authMiddleware, async (req, res) => {
   const user = await User.findById(req.user.id).select('-password');
   res.json(user);
